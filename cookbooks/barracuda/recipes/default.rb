@@ -10,6 +10,13 @@ execute "Install linux headers to allow guest additions to update properly" do
  command "apt-get install dkms build-essential linux-headers-generic -y"
 end
 
+template "/etc/hosts" do
+  source "hosts.erb"
+  owner "root"
+  group "root"
+  mode 0644
+end
+
 remote_file "/tmp/BOA.sh" do
   source "http://files.aegir.cc/BOA.sh.txt"
   mode 00755
@@ -19,48 +26,48 @@ execute "/tmp/BOA.sh" do
   creates "/usr/local/bin/boa"
 end
 
-execute "Run the BOA Installer iaminaweoctopus" do
-  command "boa in-head local gregg@iaminawe.com mini iaminaweoctopus"
+execute "Run the BOA Installer o1" do
+  command "boa in-head local aegir@aegir.loc o1 mini"
 end
 
-  user "iaminaweoctopus" do
+  user "o1" do
     supports :manage_home => true
-    home "/data/disk/iaminaweoctopus"
+    home "/data/disk/o1"
     shell "/bin/bash"
   end
 
-  directory "/data/disk/iaminaweoctopus/.ssh" do
-    owner "iaminaweoctopus"
+  directory "/data/disk/o1/.ssh" do
+    owner "o1"
     group "users"
     mode 00700
     recursive true
   end
 
   execute "Add ssh key to user" do
-    command "ssh-keygen -b 4096 -t rsa -N \"\" -f /data/disk/iaminaweoctopus/.ssh/id_rsa"
-    creates "/data/disk/iaminaweoctopus/.ssh/id_rsa"
+    command "ssh-keygen -b 4096 -t rsa -N \"\" -f /data/disk/o1/.ssh/id_rsa"
+    creates "/data/disk/o1/.ssh/id_rsa"
   end
 
-  file "/data/disk/iaminaweoctopus/.ssh/id_rsa" do
-    owner "iaminaweoctopus"
+  file "/data/disk/o1/.ssh/id_rsa" do
+    owner "o1"
     group "users"
     mode 00600
   end
   
-  file "/data/disk/iaminaweoctopus/.ssh/id_rsa.pub" do
-    owner "iaminaweoctopus"
+  file "/data/disk/o1/.ssh/id_rsa.pub" do
+    owner "o1"
     group "users"
     mode 00600
   end  
 
  # Only necessary as long as there is a need for it
 remote_file "/tmp/fix-remote-import-hostmaster-iaminaweoctopus.patch" do
-  source "https://raw.github.com/iaminawe/boa-vagrant/master/patches/fix-remote-import-hostmaster-iaminaweoctopus.patch"
+  source "https://raw.github.com/dnotes/boa-vagrant/master/patches/fix-remote-import-hostmaster-iaminaweoctopus.patch"
   mode 00755
 end
 
 execute "Apply Remote Import hostmaster patch" do
-  cwd "/data/disk/iaminaweoctopus/.drush/provision/remote_import"
+  cwd "/data/disk/o1/.drush/provision/remote_import"
   command "patch -p1 < /tmp/fix-remote-import-hostmaster-iaminaweoctopus.patch"
 end
 
@@ -69,3 +76,12 @@ end
   execute "Rebuild VirtualBox Guest Additions" do
   command "sudo /etc/init.d/vboxadd setup"
 end
+
+execute "Block access to ports using UFW" do
+  command "sudo ufw allow ssh/tcp"
+  command "sudo ufw allow http/tcp"
+  command "sudo ufw allow https/tcp"
+  command "sudo ufw default deny"
+  command "sudo ufw enable"
+end
+
