@@ -10,13 +10,6 @@ execute "Install linux headers to allow guest additions to update properly" do
  command "apt-get install dkms build-essential linux-headers-generic -y"
 end
 
-template "/etc/hosts" do
-  source "hosts.erb"
-  owner "root"
-  group "root"
-  mode 0644
-end
-
 remote_file "/tmp/BOA.sh" do
   source "http://files.aegir.cc/BOA.sh.txt"
   mode 00755
@@ -27,7 +20,7 @@ execute "/tmp/BOA.sh" do
 end
 
 execute "Run the BOA Installer o1" do
-  command "boa in-head local aegir@aegir.loc o1 mini"
+  command "boa in-stable local davidhuntatwork+dev@gmail.com mini o1"
 end
 
   user "o1" do
@@ -75,13 +68,5 @@ end
 # http://vagrantup.com/v1/docs/troubleshooting.html
   execute "Rebuild VirtualBox Guest Additions" do
   command "sudo /etc/init.d/vboxadd setup"
-end
-
-execute "Block access to ports using UFW" do
-  command "sudo ufw allow ssh/tcp"
-  command "sudo ufw allow http/tcp"
-  command "sudo ufw allow https/tcp"
-  command "sudo ufw default deny"
-  command "sudo ufw enable"
 end
 

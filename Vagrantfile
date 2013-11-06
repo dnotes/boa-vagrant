@@ -16,9 +16,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # doesn't already exist on the user's system.
   config.vm.box_url = "http://files.vagrantup.com/precise32.box"
 
-  # Set a hostname for the virtual machine
-  config.vm.host_name = "aegir"
-
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
   # accessing "localhost:8080" will access port 80 on the guest machine.
@@ -51,7 +48,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 ##  edit this file, vagrant ssh in, run sudo /etc/init.d/vboxadd setup, 
 ##  exit the guest system and run vagrant reload.
 
-#  config.vm.synced_folder "~/workspace/platforms", "/data/disk/o1/static", nfs: true
+#  config.vm.synced_folder "~/Webdev/platforms", "/data/disk/o1/static", nfs: true
 
 
   # Provider-specific configuration so you can fine-tune various
