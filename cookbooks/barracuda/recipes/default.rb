@@ -20,7 +20,7 @@ execute "/tmp/BOA.sh" do
 end
 
 execute "Run the BOA Installer o1" do
-  command "boa in-stable local davidhuntatwork+dev@gmail.com mini o1"
+  command "boa in-stable local vagrant@localhost mini o1"
 end
 
   user "o1" do
@@ -70,3 +70,21 @@ end
   command "sudo /etc/init.d/vboxadd setup"
 end
 
+template "/etc/postfix/main.cf" do
+  source "main.erb"
+  owner "root"
+  group "root"
+  mode 0644
+end
+
+template "/etc/postfix/mydestinations" do
+  source "mydestinations.erb"
+  owner "root"
+  group "root"
+  mode 0644
+end
+
+# Install alpine for reading mail
+execute "Install alpine" do
+  command "sudo apt-get install alpine"
+end
