@@ -53,17 +53,6 @@ end
     mode 00600
   end  
 
- # Only necessary as long as there is a need for it
-remote_file "/tmp/fix-remote-import-hostmaster-iaminaweoctopus.patch" do
-  source "https://raw.github.com/dnotes/boa-vagrant/master/patches/fix-remote-import-hostmaster-iaminaweoctopus.patch"
-  mode 00755
-end
-
-execute "Apply Remote Import hostmaster patch" do
-  cwd "/data/disk/o1/.drush/provision/remote_import"
-  command "patch -p1 < /tmp/fix-remote-import-hostmaster-iaminaweoctopus.patch"
-end
-
 # Rebuild VirtualBox Guest Additions
 # http://vagrantup.com/v1/docs/troubleshooting.html
   execute "Rebuild VirtualBox Guest Additions" do
@@ -102,6 +91,10 @@ end
 execute "Turn off open_basedir in php53" do
   cwd "/opt/local/etc/"
   command "sed -i 's/^open_basedir/;open_basedir/g' ./php53.ini"
+end
+
+execute "Reload php53" do
+  command "sudo service php53-fpm reload"
 end
 
 # Install alpine for reading mail
