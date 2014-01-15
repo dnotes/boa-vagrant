@@ -1,0 +1,59 @@
+#!/bin/bash
+
+if [[ $# < 1 ]]; then
+  echo "usage: testsite sitename.com [@dev.loc]"
+  echo "sites available:"
+  ls /data/disk/o1/static/sitedata
+  exit 1
+fi
+
+SITE=$1
+SITEPATH="/data/disk/o1/static/sitedata/$1"
+[[ ! -z $2 ]] && LOC=$2 || LOC='@dev.loc'
+LOCPATH=$(drush sa $LOC --component=site_path)
+
+echo $SITE
+echo $SITEPATH
+echo $LOC
+echo $LOCPATH
+
+if [ ! -d "$SITEPATH" ]; then
+  echo "Directory $SITEPATH was not found."
+  exit 1
+fi
+
+if [ ! -f "$SITEPATH/private/files/backup_migrate/scheduled/$SITE.mysql.gz" ]; then
+  echo "No mysql.gz file found at $SITEPATH/private/files/backup_migrate/scheduled/$SITE.mysql.gz."
+  exit 1
+fi
+
+if [ ! -d $LOCPATH ]; then
+  echo "$LOC was not found."
+  exit 1
+fi
+
+while true; do
+    read -p "Continue? (y/n): " yn
+    case $yn in
+        [Yy]* ) break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer [y]es or [n]o.";;
+    esac
+done
+
+rm -Rf $LOCPATH/files
+rm -Rf $LOCPATH/private
+rm -Rf $LOCPATH/modules
+rm -Rf $LOCPATH/themes
+rm -Rf $LOCPATH/libraries
+
+cp -R $SITEPATH/files $LOCPATH/files
+cp -R $SITEPATH/private $LOCPATH/private
+cp -R $SITEPATH/modules $LOCPATH/modules
+cp -R $SITEPATH/themes $LOCPATH/themes
+cp -R $SITEPATH/libraries $LOCPATH/libraries
+
+gunzip $LOCPATH/private/files/backup_migrate/scheduled/$SITE.mysql.gz
+drush $LOC sqlc < $LOCPATH/private/files/backup_migrate/scheduled/$SITE.mysql
+drush $LOC vset maintenance_mode 0 -y
+drush $LOC cc all

@@ -84,6 +84,13 @@ template "/etc/postfix/mydestinations" do
   mode 0644
 end
 
+template "/data/disk/o1/testsite" do
+  source "testsite.erb"
+  owner "o1"
+  group "o1"
+  mode 0744
+end
+
 # Install alpine for reading mail
 execute "Install alpine" do
   command "sudo apt-get install alpine"
