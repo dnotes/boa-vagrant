@@ -91,6 +91,13 @@ template "/data/disk/o1/testsite" do
   mode 0744
 end
 
+template "/etc/hosts" do
+  source "hosts.erb"
+  owner "root"
+  group "root"
+  mode 0644
+end
+
 # Turn off open_basedir so that simpletests will run - see https://drupal.org/comment/6491078#comment-6491078
 execute "Turn off open_basedir in php53" do
   cwd "/opt/local/etc/"
