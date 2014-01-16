@@ -21,6 +21,7 @@ end
 
 execute "Run the BOA Installer o1" do
   command "boa in-stable local nobody@example.com mini o1"
+  creates "/root/.o1.octopus.cnf"
 end
 
 user "o1" do
