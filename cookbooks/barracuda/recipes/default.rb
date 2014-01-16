@@ -23,39 +23,39 @@ execute "Run the BOA Installer o1" do
   command "boa in-stable local nobody@example.com mini o1"
 end
 
-  user "o1" do
-    supports :manage_home => true
-    home "/data/disk/o1"
-    shell "/bin/bash"
-  end
+user "o1" do
+  supports :manage_home => true
+  home "/data/disk/o1"
+  shell "/bin/bash"
+end
 
-  directory "/data/disk/o1/.ssh" do
-    owner "o1"
-    group "users"
-    mode 00700
-    recursive true
-  end
+directory "/data/disk/o1/.ssh" do
+  owner "o1"
+  group "users"
+  mode 00700
+  recursive true
+end
 
-  execute "Add ssh key to user" do
-    command "ssh-keygen -b 4096 -t rsa -N \"\" -f /data/disk/o1/.ssh/id_rsa"
-    creates "/data/disk/o1/.ssh/id_rsa"
-  end
+execute "Add ssh key to user" do
+  command "ssh-keygen -b 4096 -t rsa -N \"\" -f /data/disk/o1/.ssh/id_rsa"
+  creates "/data/disk/o1/.ssh/id_rsa"
+end
 
-  file "/data/disk/o1/.ssh/id_rsa" do
-    owner "o1"
-    group "users"
-    mode 00600
-  end
-  
-  file "/data/disk/o1/.ssh/id_rsa.pub" do
-    owner "o1"
-    group "users"
-    mode 00600
-  end  
+file "/data/disk/o1/.ssh/id_rsa" do
+  owner "o1"
+  group "users"
+  mode 00600
+end
+
+file "/data/disk/o1/.ssh/id_rsa.pub" do
+  owner "o1"
+  group "users"
+  mode 00600
+end  
 
 # Rebuild VirtualBox Guest Additions
 # http://vagrantup.com/v1/docs/troubleshooting.html
-  execute "Rebuild VirtualBox Guest Additions" do
+execute "Rebuild VirtualBox Guest Additions" do
   command "sudo /etc/init.d/vboxadd setup"
 end
 
@@ -76,7 +76,7 @@ end
 template "/data/disk/o1/testsite" do
   source "testsite.erb"
   owner "o1"
-  group "o1"
+  group "users"
   mode 0744
 end
 
