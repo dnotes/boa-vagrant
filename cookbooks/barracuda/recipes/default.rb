@@ -99,6 +99,19 @@ execute "Install alpine" do
   command "sudo apt-get install alpine"
 end
 
+# xDebug
+execute "Install xdebug" do
+  command "pecl install xdebug"
+  creates "/usr/lib/php5/20090626+lfs/xdebug.so"
+end
+
+template "/etc/php5/conf.d/xdebug.ini" do
+  source "xdebug.erb"
+  owner "root"
+  group "root"
+  mode 0644
+end
+
 execute "Reload php53" do
   command "sudo service php53-fpm reload"
 end
