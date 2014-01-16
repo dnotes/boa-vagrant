@@ -94,11 +94,11 @@ execute "Turn off open_basedir in php53" do
   command "sed -i 's/^open_basedir/;open_basedir/g' ./php53.ini"
 end
 
-execute "Reload php53" do
-  command "sudo service php53-fpm reload"
-end
-
 # Install alpine for reading mail
 execute "Install alpine" do
   command "sudo apt-get install alpine"
+end
+
+execute "Reload php53" do
+  command "sudo service php53-fpm reload"
 end
