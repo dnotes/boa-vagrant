@@ -1,13 +1,13 @@
 Chef::Log.debug("Running barracuda recipe")
 
 execute "update package index" do
-   command "apt-get update"
-   ignore_failure true
-   action :nothing
+  command "apt-get update"
+  ignore_failure true
+  action :nothing
 end.run_action(:run)
 
 execute "Install linux headers to allow guest additions to update properly" do
- command "apt-get install dkms build-essential linux-headers-generic -y"
+  command "apt-get install dkms build-essential linux-headers-generic -y"
 end
 
 remote_file "/tmp/BOA.sh" do
@@ -90,7 +90,7 @@ end
 
 # Turn off open_basedir so that simpletests will run - see https://drupal.org/comment/6491078#comment-6491078
 execute "Turn off open_basedir in php53" do
-  cwd "/opt/local/etc/"
+  cwd "/opt/php53/etc/"
   command "sed -i 's/^open_basedir/;open_basedir/g' ./php53.ini"
 end
 
@@ -100,16 +100,32 @@ execute "Install alpine" do
 end
 
 # xDebug
-execute "Install xdebug" do
-  command "pecl install xdebug"
-  creates "/usr/lib/php5/20090626+lfs/xdebug.so"
+execute "Install php-pear" do
+  command "apt-get install php-pear -y"
 end
 
-template "/etc/php5/conf.d/xdebug.ini" do
+execute "Install xdebug" do
+  command "pecl install -R /opt/php53 xdebug"
+  creates "/opt/php53/lib/php/extensions/no-debug-non-zts-20090626/xdebug.so"
+end
+
+template "/opt/php53/etc/xdebug.ini" do
   source "xdebug.erb"
   owner "root"
   group "root"
   mode 0644
+end
+
+template "/opt/php53/etc/xdebug-sed.txt" do
+  source "xdebug-sed.erb"
+  owner "root"
+  group "root"
+  mode 0644
+end
+
+execute "Add xdebug to php53" do
+  cwd "/opt/php53/etc"
+  command "sed -i -f xdebug-sed.txt php53.ini"
 end
 
 execute "Reload php53" do
