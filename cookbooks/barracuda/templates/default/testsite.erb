@@ -10,7 +10,7 @@ fi
 SITE=$1
 SITEPATH="/data/disk/o1/static/sitedata/$1"
 [[ ! -z $2 ]] && LOC=$2 || LOC='@dev.loc'
-LOCPATH=$(drush sa $LOC --component=site_path)
+LOCPATH=$(drush sa $LOC | sed -rne "s|^  'site_path' => '([^']+)',$|\1|p")
 
 echo $SITE
 echo $SITEPATH
