@@ -1,33 +1,44 @@
 Chef::Log.debug("Running barracuda recipe")
 
+execute "add vagrant user to users group" do
+  command "usermod -aG users vagrant"
+end
+
+execute "Create ssh key for root" do
+  command 'cat /dev/zero | ssh-keygen -q -N ""'
+  creates '/root/.ssh/id_rsa.pub'
+end
+
+template "/root/.ssh/authorized_keys" do
+  source "authorized_keys.erb"
+  owner "root"
+  group "root"
+  mode 0600
+end
+
+remote_file "/root/BOA.sh" do
+  source "http://files.aegir.cc/BOA.sh.txt"
+  owner "root"
+  group "root"
+  mode 00744
+end
+
+#execute "Install linux headers to allow guest additions to update properly" do
+#  command "apt-get install dkms build-essential linux-headers-generic -y"
+#end
+
 execute "update package index" do
   command "apt-get update"
   ignore_failure true
   action :nothing
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end.run_action(:run)
-
-execute "Install linux headers to allow guest additions to update properly" do
-  command "apt-get install dkms build-essential linux-headers-generic -y"
-end
-
-remote_file "/tmp/BOA.sh" do
-  source "http://files.aegir.cc/BOA.sh.txt"
-  mode 00755
-end
-
-execute "/tmp/BOA.sh" do
-  creates "/usr/local/bin/boa"
-end
-
-execute "Run the BOA Installer o1" do
-  command "boa in-stable local nobody@example.com mini o1"
-  creates "/root/.o1.octopus.cnf"
-end
 
 user "o1" do
   supports :manage_home => true
   home "/data/disk/o1"
   shell "/bin/bash"
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
 directory "/data/disk/o1/.ssh" do
@@ -35,36 +46,41 @@ directory "/data/disk/o1/.ssh" do
   group "users"
   mode 00700
   recursive true
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
 execute "Add ssh key to user" do
   command "ssh-keygen -b 4096 -t rsa -N \"\" -f /data/disk/o1/.ssh/id_rsa"
   creates "/data/disk/o1/.ssh/id_rsa"
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
 file "/data/disk/o1/.ssh/id_rsa" do
   owner "o1"
   group "users"
   mode 00600
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
 file "/data/disk/o1/.ssh/id_rsa.pub" do
   owner "o1"
   group "users"
   mode 00600
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end  
 
 # Rebuild VirtualBox Guest Additions
 # http://vagrantup.com/v1/docs/troubleshooting.html
-execute "Rebuild VirtualBox Guest Additions" do
-  command "sudo /etc/init.d/vboxadd setup"
-end
+#execute "Rebuild VirtualBox Guest Additions" do
+#  command "sudo /etc/init.d/vboxadd setup"
+#end
 
 template "/etc/postfix/main.cf" do
   source "main.erb"
   owner "root"
   group "root"
   mode 0644
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
 template "/etc/postfix/mydestinations" do
@@ -72,6 +88,7 @@ template "/etc/postfix/mydestinations" do
   owner "root"
   group "root"
   mode 0644
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
 template "/data/disk/o1/testsite" do
@@ -79,6 +96,7 @@ template "/data/disk/o1/testsite" do
   owner "o1"
   group "users"
   mode 0744
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
 template "/etc/hosts" do
@@ -89,45 +107,70 @@ template "/etc/hosts" do
 end
 
 # Turn off open_basedir so that simpletests will run - see https://drupal.org/comment/6491078#comment-6491078
-execute "Turn off open_basedir in php53" do
-  cwd "/opt/php53/etc/"
-  command "sed -i 's/^open_basedir/;open_basedir/g' ./php53.ini"
+execute "Turn off open_basedir in php55" do
+  cwd "/opt/php55/etc/"
+  command "sed -i 's/^open_basedir/;open_basedir/g' ./php55.ini"
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
 # Install alpine for reading mail
 execute "Install alpine" do
-  command "sudo apt-get install alpine"
+  command "apt-get install alpine -y"
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
+
+# We need a vanilla drush : https://www.drupal.org/node/2226337#comment-8620107
+# Install vanilla drush6
+# Symlink vanilla drush6
+
 
 # xDebug
 execute "Install php-pear" do
-  command "apt-get install php-pear -y"
+  command "apt-get install php-pear php5-dev -y"
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
-execute "Install xdebug" do
-  command "pecl install -R /opt/php53 xdebug"
-  creates "/opt/php53/lib/php/extensions/no-debug-non-zts-20090626/xdebug.so"
+execute "Install xdebug in php56" do
+  command "pecl install -R /opt/php56 xdebug"
+  creates "/usr/lib/php5/20131226/xdebug.so"
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
-template "/opt/php53/etc/xdebug.ini" do
+template "/root/xdebug.ini" do
   source "xdebug.erb"
   owner "root"
   group "root"
   mode 0644
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
-template "/opt/php53/etc/xdebug-sed.txt" do
+template "/root/xdebug-sed.txt" do
   source "xdebug-sed.erb"
   owner "root"
   group "root"
   mode 0644
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
-execute "Add xdebug to php53" do
-  cwd "/opt/php53/etc"
-  command "sed -i -f xdebug-sed.txt php53.ini"
+execute "Add xdebug to php56" do
+  cwd "/opt/php56/etc"
+  command "sed -i -f /root/xdebug-sed.txt php56.ini"
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
-execute "Reload php53" do
-  command "sudo service php53-fpm reload"
+execute "Reload php56" do
+  command "sudo service php56-fpm reload"
+  only_if do ::File.exists?('/root/.o1.octopus.cnf') end
+end
+
+log "/tmp/BOA.sh" do
+  message "Please login as root and run 'cd;bash BOA.sh.txt;'"
+  level :info
+  not_if do ::File.exists?('/root/.barracuda.cnf') end
+end
+
+log "Run the BOA Installer o1" do
+  message "Please login as root and run 'boa in-stable local vagrant@aegir.local none php-5.6'"
+  level :info
+  not_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end

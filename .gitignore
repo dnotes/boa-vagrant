@@ -3,3 +3,4 @@
 .DS_Store
 /platforms
 /nbproject
+/rsync-sites.sh

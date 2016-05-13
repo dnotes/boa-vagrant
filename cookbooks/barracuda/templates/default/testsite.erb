@@ -3,12 +3,12 @@
 if [[ $# < 1 ]]; then
   echo "usage: testsite sitename.com [@dev.loc]"
   echo "sites available:"
-  ls /data/disk/o1/static/sitedata
+  ls /data/disk/o1/static/dev/sitedata
   exit 1
 fi
 
 SITE=$1
-SITEPATH="/data/disk/o1/static/sitedata/$1"
+SITEPATH="/data/disk/o1/static/dev/sitedata/$1"
 [[ ! -z $2 ]] && LOC=$2 || LOC='@dev.loc'
 LOCPATH=$(drush sa $LOC | sed -rne "s|^  'site_path' => '([^']+)',$|\1|p")
 
@@ -52,6 +52,8 @@ cp -R $SITEPATH/private $LOCPATH/private
 cp -R $SITEPATH/modules $LOCPATH/modules
 cp -R $SITEPATH/themes $LOCPATH/themes
 cp -R $SITEPATH/libraries $LOCPATH/libraries
+chown -R o1:www-data $LOCPATH
+chmod -R g+w $LOCPATH
 
 gunzip $LOCPATH/private/files/backup_migrate/scheduled/$SITE.mysql.gz
 drush $LOC sqlc < $LOCPATH/private/files/backup_migrate/scheduled/$SITE.mysql
