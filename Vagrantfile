@@ -10,11 +10,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # please see the online documentation at vagrantup.com.
 
   # Every Vagrant virtual environment requires a box to build off of.
-  config.vm.box = "precise32"
-
-  # The url from where the 'config.vm.box' box will be fetched if it
-  # doesn't already exist on the user's system.
-  config.vm.box_url = "http://files.vagrantup.com/precise32.box"
+  config.vm.box = "debian/jessie64"
 
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
@@ -48,7 +44,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 ##  edit this file, vagrant ssh in, run sudo /etc/init.d/vboxadd setup, 
 ##  exit the guest system and run vagrant reload.
 
-#  config.vm.synced_folder "~/Webdev/platforms", "/data/disk/o1/static", nfs: true
+  # config.vm.synced_folder "~/working/platforms", "/data/disk/o1/static/dev", nfs: true
+  # config.bindfs.bind_folder "/vagrant-nfs", "/data/disk/o1/static/dev", :perms => "a+rwx", :force_user => "o1", :force_group => "www-data", o: "nonempty,chown-ignore,chmod-ignore"
 
 
   # Provider-specific configuration so you can fine-tune various
@@ -60,7 +57,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   #   vb.gui = true
   #
   #   # Use VBoxManage to customize the VM. For example to change memory:
-     vb.customize ["modifyvm", :id, "--memory", "1024"]
+     vb.customize ["modifyvm", :id, "--memory", "1536"]
+     vb.customize ["modifyvm", :id, "--paravirtprovider", "kvm"]
   end
   #
   # View the documentation for the provider you're using for more
