@@ -126,12 +126,12 @@ end
 
 # xDebug
 execute "Install php-pear" do
-  command "apt-get install php-pear php5-dev -y"
+  command "apt-get install php-pear -y"
   only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
-execute "Install xdebug in php56" do
-  command "pecl install -R /opt/php56 xdebug"
+execute "Install xdebug in php70" do
+  command "pecl install -R /opt/php70 xdebug"
   creates "/usr/lib/php5/20131226/xdebug.so"
   only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
@@ -152,14 +152,14 @@ template "/root/xdebug-sed.txt" do
   only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
-execute "Add xdebug to php56" do
-  cwd "/opt/php56/etc"
-  command "sed -i -f /root/xdebug-sed.txt php56.ini"
+execute "Add xdebug to php70" do
+  cwd "/opt/php70/etc"
+  command "sed -i -f /root/xdebug-sed.txt php70.ini"
   only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
-execute "Reload php56" do
-  command "sudo service php56-fpm reload"
+execute "Reload php70" do
+  command "sudo service php70-fpm reload"
   only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
@@ -170,7 +170,7 @@ log "/tmp/BOA.sh" do
 end
 
 log "Run the BOA Installer o1" do
-  message "Please login as root and run 'boa in-stable local vagrant@aegir.local none php-5.6'"
+  message "Please login as root and run 'boa in-stable local vagrant@aegir.local none php-7.0'"
   level :info
   not_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
