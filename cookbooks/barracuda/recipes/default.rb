@@ -107,9 +107,11 @@ template "/etc/hosts" do
 end
 
 # Turn off open_basedir so that simpletests will run - see https://drupal.org/comment/6491078#comment-6491078
-execute "Turn off open_basedir in php55" do
-  cwd "/opt/php55/etc/"
-  command "sed -i 's/^open_basedir/;open_basedir/g' ./php55.ini"
+execute "Turn off open_basedir" do
+  cwd "/opt/php56/etc/"
+  command "sed -i 's/^open_basedir/;open_basedir/g' ./php56.ini"
+  cwd "/opt/php70/etc/"
+  command "sed -i 's/^open_basedir/;open_basedir/g' ./php70.ini"
   only_if do ::File.exists?('/root/.o1.octopus.cnf') end
 end
 
