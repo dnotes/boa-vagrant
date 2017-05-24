@@ -44,7 +44,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 ##  edit this file, vagrant ssh in, run sudo /etc/init.d/vboxadd setup, 
 ##  exit the guest system and run vagrant reload.
 
-  config.vm.synced_folder "~/working/platforms", "/data/disk/o1/static/dev", nfs: true
+  # config.vm.synced_folder "~/working/platforms", "/data/disk/o1/static/dev", nfs: true
+
+## This is a test of using bindfs for user permissions. It does not seem to work well.
   # config.bindfs.bind_folder "/vagrant-nfs", "/data/disk/o1/static/dev", :perms => "a+rwx", :force_user => "o1", :force_group => "www-data", o: "nonempty,chown-ignore,chmod-ignore"
 
 
