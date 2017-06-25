@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [[ $# < 1 ]]; then
-  echo "usage: testsite sitename.com [@dev.loc]"
+  echo "usage: testsite sitename.com dev.loc [platform] [profile=bahai_incubator]"
   echo "sites available:"
   ls /data/disk/o1/static/dev/sitedata
   exit 1
@@ -9,28 +9,51 @@ fi
 
 SITE=$1
 SITEPATH="/data/disk/o1/static/dev/sitedata/$1"
-[[ ! -z $2 ]] && LOC=$2 || LOC='@dev.loc'
-LOCPATH=$(drush sa $LOC | sed -rne "s|^  'site_path' => '([^']+)',$|\1|p")
-
-echo $SITE
-echo $SITEPATH
-echo $LOC
-echo $LOCPATH
-
 if [ ! -d "$SITEPATH" ]; then
   echo "Directory $SITEPATH was not found."
   exit 1
 fi
-
 if [ ! -f "$SITEPATH/private/files/backup_migrate/scheduled/$SITE.mysql.gz" ]; then
   echo "No mysql.gz file found at $SITEPATH/private/files/backup_migrate/scheduled/$SITE.mysql.gz."
   exit 1
 fi
 
-if [ ! -d $LOCPATH ]; then
-  echo "$LOC was not found."
+[[ $2 == "@"* ]] && LOC=$2 || LOC="@$2"
+
+LOCREGEX="^@[-_\.a-z0-9]+$"
+if [[ ! ($LOC =~ $LOCREGEX) ]]; then
+  echo "$LOC is not a supported local site name (a-z 0-9 . _ -)"
   exit 1
 fi
+
+[[ $3 == "platform_"* ]] && PLATFORM=$3 || PLATFORM="platform_$3"
+if [ $PLATFORM != 'platform_' ]; then
+  if [[ ! -f "/data/disk/o1/.drush/$PLATFORM.alias.drushrc.php" ]]; then
+    echo "$PLATFORM does not exist."
+    echo $(find /data/disk/o1/.drush -maxdepth 1 -type f -name "platform_*" | sed -rne "s|/data/disk/o1/\.drush/platform_([^\.]+)\.alias\.drushrc\.php|\1|p")
+    exit 1
+  fi
+  PLATFORMPATH=$(drush sa "@$PLATFORM" | sed -rne "s|^  'root' => '([^']+)',$|\1|p")
+fi
+
+if [[ -f /data/disk/o1/.drush/${LOC:1}.alias.drushrc.php ]]; then
+  LOCPATH=$(drush sa $LOC | sed -rne "s|^  'site_path' => '([^']+)',$|\1|p")
+  echo "!!! IMPORTANT: $LOC will be OVERWRITTEN !!!"
+elif [ ! -z "$PLATFORMPATH" ]; then
+  LOCPATH="$PLATFORMPATH/sites/${LOC:1}"
+  [[ -z $4 ]] && PROFILE="bahai_incubator" || PROFILE=$4
+  NEWSITE=1
+else
+  echo "You must pass either an existing local path or platform."
+  echo $(find /data/disk/o1/.drush -maxdepth 1 -type f -name "platform_*" | sed -rne "s|/data/disk/o1/\.drush/platform_([^\.]+)\.alias\.drushrc\.php|\1|p")
+  exit 1
+fi
+
+echo $SITE
+echo $SITEPATH
+echo $LOC
+echo $LOCPATH
+echo $PROFILE
 
 while true; do
     read -p "Continue? (y/n): " yn
@@ -41,21 +64,40 @@ while true; do
     esac
 done
 
-rm -Rf $LOCPATH/files
-rm -Rf $LOCPATH/private
-rm -Rf $LOCPATH/modules
-rm -Rf $LOCPATH/themes
-rm -Rf $LOCPATH/libraries
+if [ ! -z NEWSITE ]; then
+  drush provision-save $LOC --context_type=site --platform=@$PLATFORM --uri=${LOC:1} --db_server=@server_localhost --client_name=admin --profile=$PROFILE
+  cp -f $SITEPATH/private/files/backup_migrate/scheduled/$SITE.mysql.gz $SITEPATH/database.sql.gz
+  gunzip -f $SITEPATH/database.sql.gz
+  tar -czf $LOCPATH.tar.gz $SITEPATH
+  chown o1:www-data $LOCPATH.tar.gz
+  drush $LOC provision-deploy $LOCPATH.tar.gz --old_uri="$SITE"
+  rm $LOCPATH.tar.gz
+else
+  rm -Rf $LOCPATH/files
+  rm -Rf $LOCPATH/private
+  rm -Rf $LOCPATH/modules
+  rm -Rf $LOCPATH/themes
+  rm -Rf $LOCPATH/libraries
+  cp -R $SITEPATH/files $LOCPATH/files
+  cp -R $SITEPATH/private $LOCPATH/private
+  cp -R $SITEPATH/modules $LOCPATH/modules
+  cp -R $SITEPATH/themes $LOCPATH/themes
+  cp -R $SITEPATH/libraries $LOCPATH/libraries
+  chown -R o1:www-data $LOCPATH
+  chmod -R g+w $LOCPATH
+  gunzip $LOCPATH/private/files/backup_migrate/scheduled/$SITE.mysql.gz
+  drush $LOC sqlc < $LOCPATH/private/files/backup_migrate/scheduled/$SITE.mysql
+  drush $LOC vset maintenance_mode 0 -y
+  drush $LOC rr --fire-bazooka
+fi
 
-cp -R $SITEPATH/files $LOCPATH/files
-cp -R $SITEPATH/private $LOCPATH/private
-cp -R $SITEPATH/modules $LOCPATH/modules
-cp -R $SITEPATH/themes $LOCPATH/themes
-cp -R $SITEPATH/libraries $LOCPATH/libraries
-chown -R o1:www-data $LOCPATH
-chmod -R g+w $LOCPATH
-
-gunzip $LOCPATH/private/files/backup_migrate/scheduled/$SITE.mysql.gz
-drush $LOC sqlc < $LOCPATH/private/files/backup_migrate/scheduled/$SITE.mysql
-drush $LOC vset maintenance_mode 0 -y
-drush $LOC cc all
+if [ -e /data/disk/o1/static/dev/incubator-dev/zmodules ]; then
+  find $LOCPATH/modules -maxdepth 1 -type d -print0 | while IFS= read -r -d $'\0' line; do
+    MODULENAME=${line##/*/}
+    if [ -d "/data/disk/o1/static/dev/incubator-dev/zmodules/$MODULENAME" ]; then
+      echo "linking $MODULENAME module"
+      rm -Rf $line
+      ln -s /data/disk/o1/static/dev/incubator-dev/zmodules/$MODULENAME $line
+    fi
+  done
+fi
