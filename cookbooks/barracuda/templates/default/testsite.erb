@@ -40,9 +40,9 @@ if [[ -f /data/disk/o1/.drush/${LOC:1}.alias.drushrc.php ]]; then
   LOCPATH=$(drush sa $LOC | sed -rne "s|^  'site_path' => '([^']+)',$|\1|p")
   echo "!!! IMPORTANT: $LOC will be OVERWRITTEN !!!"
 elif [ ! -z "$PLATFORMPATH" ]; then
-  LOCPATH="$PLATFORMPATH/sites/${LOC:1}"
   [[ -z $4 ]] && PROFILE="bahai_incubator" || PROFILE=$4
   NEWSITE=1
+  LOCPATH="$PLATFORMPATH/sites/${LOC:1}"
 else
   echo "You must pass either an existing local path or platform."
   echo $(find /data/disk/o1/.drush -maxdepth 1 -type f -name "platform_*" | sed -rne "s|/data/disk/o1/\.drush/platform_([^\.]+)\.alias\.drushrc\.php|\1|p")
@@ -68,10 +68,12 @@ if [ ! -z NEWSITE ]; then
   drush provision-save $LOC --context_type=site --platform=@$PLATFORM --uri=${LOC:1} --db_server=@server_localhost --client_name=admin --profile=$PROFILE
   cp -f $SITEPATH/private/files/backup_migrate/scheduled/$SITE.mysql.gz $SITEPATH/database.sql.gz
   gunzip -f $SITEPATH/database.sql.gz
-  tar -czf $LOCPATH.tar.gz $SITEPATH
-  chown o1:www-data $LOCPATH.tar.gz
-  drush $LOC provision-deploy $LOCPATH.tar.gz --old_uri="$SITE"
-  rm $LOCPATH.tar.gz
+  cp -r $SITEPATH /data/disk/o1/
+  chown -R o1:www-data /data/disk/o1/$SITE
+  tar -C "/data/disk/o1/$SITE" -czf "/data/disk/o1/$SITE.tar.gz" . 
+  rm -Rf "/data/disk/o1/$SITE/"
+  drush $LOC provision-deploy /data/disk/o1/$SITE.tar.gz --old_uri="$SITE"
+  rm /data/disk/o1/$SITE.tar.gz
 else
   rm -Rf $LOCPATH/files
   rm -Rf $LOCPATH/private
